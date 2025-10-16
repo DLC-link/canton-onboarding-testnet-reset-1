@@ -1,9 +1,42 @@
-def main(): Unit = {
-  val governanceDarPath = "./dars/cbtc-governance-0.0.1.dar"
-  val CBTCDarPath = "./dars/cbtc-0.0.1.dar"
+import java.io.File
 
-  participant.dars.upload(CBTCDarPath)
-  participant.dars.upload(governanceDarPath)
+def main(): Unit = {
+  val cbtcDARDir = new File("./dars/cbtc")
+  val cbtcDARs = if (cbtcDARDir.exists && cbtcDARDir.isDirectory) {
+    cbtcDARDir.listFiles
+      .filter(_.getName.endsWith(".dar"))
+      .map(_.getPath)
+  } else {
+    throw new RuntimeException("./dars/cbtc directory not found")
+  }
+
+  println("Uploading CTBC DARs...")
+
+  cbtcDARs.foreach { path =>
+    println(s"Uploading CTBC DAR: $path")
+    participant.dars.upload(path)
+  }
+
+  println("Uploaded all CTBC DARs.")
+
+  val dependencyDARDir = new File("./dars/dependencies")
+  val dependencyDARs = if (dependencyDARDir.exists && dependencyDARDir.isDirectory) {
+    dependencyDARDir.listFiles
+      .filter(_.getName.endsWith(".dar"))
+      .map(_.getPath)
+  } else {
+    throw new RuntimeException("./dars/dependencies directory not found")
+  }
+
+  println("Uploading dependency DARs...")
+
+  dependencyDARs.foreach { path =>
+    println(s"Uploading dependency DAR: $path")
+    participant.dars.upload(path)
+  }
+
+  println("Uploaded all dependency DARs.")
+
 }
 
 main()
