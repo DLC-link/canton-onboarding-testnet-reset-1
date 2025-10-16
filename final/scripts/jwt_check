@@ -1,0 +1,105 @@
+#!/bin/bash
+
+# JWT Token Field Extractor
+# Extracts and prints the aud, sub, and scope fields from a JWT token
+
+# Function to display usage
+usage() {
+    echo "Usage: $0 <jwt_token>"
+    echo "       echo '<jwt_token>' | $0"
+    echo ""
+    echo "Extracts and prints the aud, sub, and scope fields from a JWT token"
+    echo ""
+    echo "Examples:"
+    echo "  $0 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+    echo "  echo 'eyJ...' | $0"
+    exit 1
+}
+
+# Function to decode base64 URL-safe format
+decode_base64url() {
+    local input="$1"
+    # Add padding if needed
+    local padded="$input"
+    case $((${#input} % 4)) in
+        2) padded="${input}==" ;;
+        3) padded="${input}=" ;;
+    esac
+    # Replace URL-safe characters and decode
+    echo "$padded" | tr '_-' '/+' | base64 -d 2>/dev/null
+}
+
+# Function to extract and print JWT fields
+extract_jwt_fields() {
+    local jwt_token="$1"
+    
+    # Validate JWT format (should have 3 parts separated by dots)
+    local part_count=$(echo "$jwt_token" | tr -cd '.' | wc -c)
+    if [ "$part_count" -ne 2 ]; then
+        echo "Error: Invalid JWT token format. Expected 3 parts separated by dots." >&2
+        exit 1
+    fi
+    
+    # Extract the payload (second part)
+    local payload=$(echo "$jwt_token" | cut -d'.' -f2)
+    
+    # Decode the payload
+    local decoded_payload=$(decode_base64url "$payload")
+    
+    if [ $? -ne 0 ] || [ -z "$decoded_payload" ]; then
+        echo "Error: Failed to decode JWT payload" >&2
+        exit 1
+    fi
+    
+    # Check if jq is available
+    if ! command -v jq &> /dev/null; then
+        echo "Error: jq is required but not installed. Please install jq to parse JSON." >&2
+        exit 1
+    fi
+    
+    # Parse JSON and extract fields
+    echo "JWT Token Fields:"
+    echo "=================="
+    
+    # Extract aud field
+    local aud=$(echo "$decoded_payload" | jq -r '.aud // "Not found"' 2>/dev/null)
+    echo "Audience (aud): $aud"
+    
+    # Extract sub field
+    local sub=$(echo "$decoded_payload" | jq -r '.sub // "Not found"' 2>/dev/null)
+    echo "Subject (sub): $sub"
+    
+    # Extract scope field
+    local scope=$(echo "$decoded_payload" | jq -r '.scope // "Not found"' 2>/dev/null)
+    echo "Scope: $scope"
+}
+
+# Main script logic
+main() {
+    local jwt_token=""
+    
+    # Check if token is provided as argument
+    if [ $# -eq 1 ]; then
+        jwt_token="$1"
+    # Check if token is provided via stdin
+    elif [ ! -t 0 ]; then
+        jwt_token=$(cat)
+    else
+        usage
+    fi
+    
+    # Remove any whitespace/newlines
+    jwt_token=$(echo "$jwt_token" | tr -d '\n\r\t ')
+    
+    # Validate that we have a token
+    if [ -z "$jwt_token" ]; then
+        echo "Error: No JWT token provided" >&2
+        exit 1
+    fi
+    
+    # Extract and print the fields
+    extract_jwt_fields "$jwt_token"
+}
+
+# Run the main function
+main "$@"
