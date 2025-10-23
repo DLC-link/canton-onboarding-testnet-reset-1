@@ -1,6 +1,7 @@
 # Canton Onboarding - Step 4
 
-The purpose of this step is to ...
+The purpose of this step is to sign the prepared submissions for deploying the core contracts of the CBTC system.
+
 ## Prerequisite
 
 Please check whether you have everything set up properly [here](../misc/README.md).
