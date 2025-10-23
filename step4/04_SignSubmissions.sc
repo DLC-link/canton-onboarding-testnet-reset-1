@@ -3,12 +3,17 @@ import com.digitalasset.canton.resource
 import com.digitalasset.canton.version
 
 def main() {
+
+  println("Fetching key fingerprint...")
+
   // Get fingerprint set up in the 1st step
   val keyFingerprint = participant.keys.secret
     .list()
     .find(p => p.name == Some("cbtc-network-daml-transactions"))
     .get
     .id
+
+  println("Reading prepared submissions and signing...")
 
   // Read the prepared submissions from the input folder
   val sub = utils.read_byte_string_from_file("./input/prepared-submission-1.bin")
@@ -139,6 +144,8 @@ def main() {
     Seq(signature1.toProtoV30, signature2.toProtoV30, signature3.toProtoV30),
     "output/submission-signatures.bin"
   )
+
+  println("All signatures have been written successfully. Please send the output file to the Bitsafe team.")
 }
 
 main()
